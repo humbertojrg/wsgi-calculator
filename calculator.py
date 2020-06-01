@@ -41,32 +41,95 @@ To submit your homework:
 
 """
 
+import traceback
+
+def instructions(*args):
+    """ Returns a STRING with the sum of the arguments """
+
+    # TODO: Fill sum with the correct value, based on the
+    # args provided.
+    body = """ Welcome!
+    To use this appliaction, please use one of the following four opertaions,
+    mutliply,
+    add,
+    subtract,
+    divide,
+    followed by two numbers, all seperated with a slash"""
+
+    return body
+
 
 def add(*args):
     """ Returns a STRING with the sum of the arguments """
 
     # TODO: Fill sum with the correct value, based on the
     # args provided.
-    sum = "0"
+    sum = 0
+    
+    sum  = int(args[0]) + int(args[1])
 
-    return sum
+    return str(sum)
 
-# TODO: Add functions for handling more arithmetic operations.
+
+def multiply(*args):
+    """ Returns a STRING with the sum of the arguments """
+
+    # TODO: Fill sum with the correct value, based on the
+    # args provided.
+    product = 1
+    
+    product = int(args[0]) * int(args[1])
+
+    return str(product)
+
+def subtract(*args):
+    """ Returns a STRING with the sum of the arguments """
+
+    # TODO: Fill sum with the correct value, based on the
+    # args provided.
+    
+    sum = int(args[0]) - int(args[1])
+
+    return str(sum)
+
+def divide(*args):
+    """ Returns a STRING with the sum of the arguments """
+
+    # TODO: Fill sum with the correct value, based on the
+    # args provided.
+    
+    quotient = int(args[0])/int(args[1])
+
+    return str(quotient)
 
 def resolve_path(path):
     """
     Should return two values: a callable and an iterable of
     arguments.
     """
-
     # TODO: Provide correct values for func and args. The
     # examples provide the correct *syntax*, but you should
     # determine the actual values of func and args using the
     # path.
-    func = add
-    args = ['25', '32']
+    
+    funcs = {'': instructions,
+             'add': add,
+             'multiply': multiply,
+             'divide': divide,
+             'subtract': subtract}
+
+    path = path.strip('/').split('/')
+
+    func_name = path[0]
+    args = path[1:]
+
+    try:
+        func = funcs[func_name]
+    except KeyError:
+        raise NameError
 
     return func, args
+
 
 def application(environ, start_response):
     # TODO: Your application code from the book database
@@ -76,9 +139,30 @@ def application(environ, start_response):
     #
     # TODO (bonus): Add error handling for a user attempting
     # to divide by zero.
-    pass
+    headers = [("Content-type", "text/html")]
+    status = "200 OK"
+    try:
+        path = environ.get('PATH_INFO', None)
+        if path is None:
+            raise NameError
+        func, args = resolve_path(path)
+        body = func(*args)
+        status = "200 OK"
+    except NameError:
+        status = "404 Not Found"
+        body = "<h1>Not Found</h1>"
+    except Exception:
+        status = "500 Internal Server Error"
+        body = "<h1>Internal Server Error</h1>"
+        print(traceback.format_exc())
+    finally:
+        headers.append(('Content-length', str(len(body))))
+        start_response(status, headers)
+        return [body.encode('utf8')]
 
 if __name__ == '__main__':
     # TODO: Insert the same boilerplate wsgiref simple
     # server creation that you used in the book database.
-    pass
+    from wsgiref.simple_server import make_server
+    srv = make_server('localhost', 8080, application)
+    srv.serve_forever()
